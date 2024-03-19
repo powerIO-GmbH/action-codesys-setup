@@ -1,0 +1,144 @@
+name: "Setup CODESYS Installation"
+author: powerIO GmbH (Kevin Rohn)
+description: "Setup CODESYS Installation for headless CI/CD Jobs"
+
+branding:
+  icon: 'package'
+  color: 'red'
+
+inputs:
+  installer-version:
+    description: 'The version of the CODESYS installer to use'
+    required: false
+    default: 2.2.2
+
+  generation:
+    description: 'The generation of the CODESYS version to install'
+    required: false
+    default: 3.5.19.0
+
+  architecture:
+    description: 'The architecture of the CODESYS version to install'
+    required: false
+    default: 64
+    
+  patch:
+    description: 'The patch of the CODESYS version to install'
+    required: false
+    default: 0
+
+  hotfix:
+    description: 'The hotfix of the CODESYS version to install'
+    required: false
+    default: 0
+
+  build:
+    description: 'The build of the CODESYS version to install'
+    required: false
+    default: 0
+
+  installation-directory:
+    description: 'The directory to install CODESYS to'
+    required: false
+    default: ''
+
+runs:
+  using: composite
+  steps:
+    - name: Set globals
+      id: globals
+      shell: pwsh
+      run: |
+        echo "BASE_URL_INSTALLER=https://store-archive.codesys.com/ftp_download/3S/Installer/000127" >> $env:GITHUB_OUTPUT
+        echo "INSTALLER_VERSION=${{ inputs.installer-version }}" >> $env:GITHUB_OUTPUT
+        echo "INSTALLER_DIR=C:\Program Files (x86)\CODESYS\APInstaller" >> $env:GITHUB_OUTPUT
+
+    - name: Download installer
+      shell: bash
+      run: |
+        base_url=${{ steps.globals.outputs.BASE_URL_INSTALLER }}
+        version=${{ steps.globals.outputs.INSTALLER_VERSION }}
+        curl "${base_url}/${version}/CODESYS%20Installer%20${version}.exe" -o installer.exe
+
+    - name: Install CODESYS installer
+      shell: pwsh
+      run: |
+        Start-Process -FilePath "installer.exe" -ArgumentList "/S /v/qb" -Wait
+        Remove-Item -Path "installer.exe"
+
+    - name: Update Installer
+      shell: pwsh
+      run: |
+        cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
+        .\APInstaller.CLI.exe --selfUpdate
+        if ($LASTEXITCODE -eq 1) {
+          Write-Host "No update available. Exiting with code 0 as success."
+          exit 0
+        } elseif ($LASTEXITCODE -eq -1) {
+          Write-Host "Special case encountered. Exiting with code 0 as success."
+          exit 0
+        }
+        if ($LASTEXITCODE -ne 0) {
+          throw "Update failed with exit code $LASTEXITCODE."
+        }
+    
+    - name: Prepare and Validate Inputs
+      id: parameter_validation
+      shell: bash
+      run: |
+        if ! [[ ${{ inputs.generation }} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Generation format is invalid. Must be X.X.X.X where X is a number."
+          exit 1
+        fi
+        if [ "${{ inputs.architecture }}" != "64" ] && [ "${{ inputs.architecture }}" != "32" ]; then
+          echo "Architecture must be 64 or 32."
+          exit 1
+        fi
+        if ! [[ ${{ inputs.patch }} =~ ^[0-9]+$ ]] \
+              || ! [[ ${{ inputs.hotfix }} =~ ^[0-9]+$ ]] \
+              || ! [[ ${{ inputs.build }} =~ ^[0-9]+$ ]]; then
+          echo "Patch, Hotfix, and Build must be numeric."
+          exit 1
+        fi
+
+        IFS='.' read -ra version_parts <<< "${{ inputs.generation }}"
+        length=${#version_parts[@]}
+        let "last_index=length-1"
+        version_parts[$last_index]=${{ inputs.patch }}
+        new_generation="${version_parts[0]}"
+        for (( i=1; i<${#version_parts[@]}; i++ )); do
+            new_generation="$new_generation.${version_parts[$i]}"
+        done
+        installation_name="CODESYS $(echo "${new_generation}" | sed 's/ /./g')"
+
+        if [[ -z "${{ inputs.installation-directory }}" ]]; then
+          if [ "${{ inputs.architecture }}" == "64" ]; then
+            installation_path="C:\Program Files\CODESYS ${installation_name}"
+          else
+            installation_path="C:\Program Files (x86)\CODESYS ${installation_name}"
+          fi
+        else
+          installation_path="${{ inputs.installation-directory }}"
+        fi
+
+        echo "installation-path=$installation_path" >> $GITHUB_OUTPUT
+        echo "installation-name=$installation_name" >> $GITHUB_OUTPUT
+
+    - name: Install CODESYS
+      shell: pwsh
+      run: |
+        cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
+        .\APInstaller.CLI.exe --createInstallation `
+        --product CODESYS `
+        --generation "${{ inputs.generation }}" `
+        --bit ${{ inputs.architecture }} `
+        --patch ${{ inputs.patch }} `
+        --hotfix ${{ inputs.hotfix }} `
+        --build ${{ inputs.build }} `
+        --installationName "${{ steps.parameter_validation.outputs.installation-name }}" `
+        --destinationFolder "${{ steps.parameter_validation.outputs.installation-path }}"
+
+    - name: Show Installation directory
+      shell: bash
+      run: |
+        ls -lah "${{ steps.parameter_validation.outputs.installation-path }}\CODESYS\Common"
