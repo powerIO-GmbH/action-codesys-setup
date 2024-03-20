@@ -7,6 +7,9 @@
 This action is designed to install CODESYS for further CI/CD jobs, such as signing libraries, signing packages, etc. 
 It can also be used to process test cases or other CI/CD jobs in your workflow.
 
+> [!IMPORTANT]  
+> This action is only supported to run on windows OS.
+
 ## Usage
 
 >:white_flag: See the [inputs](#inputs) section for detailed descriptions.

@@ -75,6 +75,13 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Check runner OS
+      if: ${{ runner.os }} != 'Windows'
+      shell: bash
+      run: |
+        echo "::error::This action is only supported on Windows runners."
+        exit 1
+        
     - name: Set globals
       id: globals
       shell: pwsh
