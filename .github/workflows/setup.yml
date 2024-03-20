@@ -1,0 +1,63 @@
+name: Setup CODESYS Installation in matrix
+
+on: push
+
+jobs:
+  setup-installation:
+    strategy:
+      matrix:
+        generation:
+          - 3.5.16.0
+          - 3.5.20.0
+        architecture:
+          - 32
+          - 64
+        include:
+          - generation: 3.5.16.0
+            patch: 3
+          - generation: 3.5.20.0
+            patch: 0
+
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup CODESYS
+      id: setup_codesys
+      uses: ./
+      with:
+        installer-version: 2.2.2
+        auto-update-installer: false
+        generation: ${{ matrix.generation }}
+        architecture: ${{ matrix.architecture }}
+        patch: ${{ matrix.patch }}
+    
+    - name: Test outputs
+      shell: bash
+      run: |
+        echo "Installer path: ${{ steps.setup_codesys.outputs.installer-path }}"
+        echo "Installer executable: ${{ steps.setup_codesys.outputs.installer-cli-executable }}"
+        echo "CODESYS Path: ${{ steps.setup_codesys.outputs.codesys-path }}"
+        echo "CODESYS executable: ${{ steps.setup_codesys.outputs.codesys-executable }}"
+
+  setup-installation-with-addons:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup CODESYS
+      id: setup_codesys
+      uses: ./
+      with:
+        installer-version: 2.2.2
+        auto-update-installer: true
+        generation: 3.5.20.0
+        architecture: 64
+        install-add-ons: true
+        add-ons-list: |
+          dd6c2da4-2ed2-4076-9bf7-52394db68819,1.4.0.0
+          fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
+        add-ons-from-file-list: |
+          example/HVAC_Building_Process_Automation_SL_3.0.0.0.package

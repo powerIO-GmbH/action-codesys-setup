@@ -3,74 +3,106 @@ author: powerIO GmbH (Kevin Rohn)
 description: "Setup CODESYS Installation for headless CI/CD Jobs"
 
 branding:
-  icon: 'package'
-  color: 'red'
+  icon: "package"
+  color: "red"
 
 inputs:
   installer-version:
-    description: 'The version of the installer to use to install the CODESYS installation.'
+    description: "The version of the installer to use to install the CODESYS installation."
     required: false
     default: 2.2.2
 
   generation:
-    description: > 
+    description: >
       'This is the base generation you want to install. For example `3.5.19.0`.
       Even if you want to install the version `3.5.19.6` you have to define the generation as `3.5.19.0`.  
-      The patch version is defined by the `patch` input.'  
+      The patch version is defined by the `patch` input.'
     required: false
     default: 3.5.19.0
 
   architecture:
-    description: 'The installation architecture of CODESYS. Allowed inputs: `32` and `64`.'
+    description: "The installation architecture of CODESYS. Allowed inputs: `32` and `64`."
     required: false
     default: 64
-    
+
   patch:
-    description: 'The patch of the CODESYS version to install.'
+    description: "The patch of the CODESYS version to install."
     required: false
     default: 0
 
   hotfix:
-    description: 'The hotfix of the CODESYS version to install.'
+    description: "The hotfix of the CODESYS version to install."
     required: false
     default: 0
 
   build:
-    description: 'The build of the CODESYS version to install.'
+    description: "The build of the CODESYS version to install."
     required: false
     default: 0
 
   installation-directory:
-    description: > 
+    description: >
       'This can be used to define a custom installation directory.  
-      If this input is empty, the installation path is set based on the architecture and installation version.  
+       If this input is empty, the installation path is set based on the architecture and installation version.  
 
-      For example - bit `64`, generation `3.5.19.0` and patch `6`:  
-      `C:\Program Files\CODESYS 3.5.19.6`
+        For example - bit `64`, generation `3.5.19.0` and patch `6`:  
+        `C:\Program Files\CODESYS 3.5.19.6`
 
-      For example - bit `32`, generation `3.5.17.0` and patch `2`:  
-      `C:\Program Files (x86)\CODESYS 3.5.17.2`'
+        For example - bit `32`, generation `3.5.17.0` and patch `2`:  
+        `C:\Program Files (x86)\CODESYS 3.5.17.2`'
     required: false
-    default: ''
-  
+    default: ""
+
   auto-update-installer:
-    description: 'If set to `true`, the installer will be updated before the installation.'
+    description: "If set to `true`, the installer will be updated before the installation."
     required: false
     default: true
 
+  install-add-ons:
+    description: "If set to `true`, the installer will install the CODESYS AddOns."
+    required: false
+    default: false
+
+  add-ons-list:
+    description: >
+      'A list of addons to install.
+      Given by the id and the version of the addon.
+
+      For example - Install Git `dd6c2da4-2ed2-4076-9bf7-52394db68819,1.4.0.0`
+
+      If you want to install multiple addons, create a new line for each addon.
+        For example - Install Git and Library dev package
+        ```
+        dd6c2da4-2ed2-4076-9bf7-52394db68819,1.4.0.0
+        fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
+        ```
+      '
+    required: false
+    default: ''
+  
+  add-ons-from-file-list:
+    description: >
+      'A list of addons to install.
+      Given by the path to the *.package file' 
+    required: false
+    default: '' 
+
 outputs:
-  codesys-path: 
+  codesys-path:
     value: ${{ steps.parameter_validation.outputs.installation-path }}
-    description: 'The path of the installed CODESYS version.'
+    description: "The path of the installed CODESYS version."
   codesys-executable:
     value: ${{ steps.parameter_validation.outputs.installation-path }}\CODESYS\Common\CODESYS.exe
-    description: 'The path of the CODESYS executable.'
+    description: "The path of the CODESYS executable."
   installer-path:
     value: ${{ steps.globals.outputs.INSTALLER_DIR }}
-    description: 'The path of the installed CODESYS installer.'
+    description: "The path of the installed CODESYS installer."
   installer-cli-executable:
     value: ${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe
-    description: 'The path of the CODESYS installer CLI executable.'
+    description: "The path of the CODESYS installer CLI executable."
+  installation-info-file-path:
+    value: ${{ steps.install_info.outputs.installation-info-file-path }}
+    description: "The path of the installation information file."
 
 runs:
   using: composite
@@ -81,56 +113,65 @@ runs:
       run: |
         echo "::error::This action is only supported on Windows runners."
         exit 1
-        
+
     - name: Set globals
       id: globals
       shell: pwsh
       run: |
         echo "::group::Set Global variables for installation"
+
         echo "BASE_URL_INSTALLER=https://store-archive.codesys.com/ftp_download/3S/Installer/000127" >> $env:GITHUB_OUTPUT
         echo "INSTALLER_VERSION=${{ inputs.installer-version }}" >> $env:GITHUB_OUTPUT
         echo "INSTALLER_DIR=C:\Program Files (x86)\CODESYS\APInstaller" >> $env:GITHUB_OUTPUT
+
         echo "::endgroup::"
 
     - name: Download installer
       shell: bash
       run: |
         echo "::group::Download CODESYS installer"
+
         base_url=${{ steps.globals.outputs.BASE_URL_INSTALLER }}
         version=${{ steps.globals.outputs.INSTALLER_VERSION }}
         curl "${base_url}/${version}/CODESYS%20Installer%20${version}.exe" -o installer.exe
+
         echo "::endgroup::"
 
     - name: Install CODESYS installer
       shell: pwsh
       run: |
-        echo "::group::Install CODESYS installer"
+        Write-Host "::group::Install CODESYS installer"
+
+        Write-Host "This process will take a few seconds. Please be patient."
+
         Start-Process -FilePath "installer.exe" -ArgumentList "/S /v/qb" -Wait
         Remove-Item -Path "installer.exe"
-        echo "::endgroup::"
+
+        Write-Host "::endgroup::"
 
     - if: ${{ inputs.auto-update-installer == 'true' }}
       name: Update Installer
       shell: pwsh
       run: |
-        echo "::group::Update CODESYS installer"
-        cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
-        .\APInstaller.CLI.exe --selfUpdate
-        if ($LASTEXITCODE -eq 1) {
-          exit 0
-        } elseif ($LASTEXITCODE -eq -1) {
-          exit 0
+        Write-Host "::group::Update CODESYS installer"
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $process = Start-Process -FilePath $exePath -ArgumentList "--selfUpdate" -Wait -NoNewWindow -PassThru
+
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "Update failed with exit code $($process.ExitCode)."
         }
-        if ($LASTEXITCODE -ne 0) {
-          throw "Update failed with exit code $LASTEXITCODE."
-        }
-        echo "::endgroup::"
+
+        Write-Host "::endgroup::"
 
     - name: Prepare and validate inputs
       id: parameter_validation
       shell: bash
       run: |
         echo "::group::Validate inputs"
+
         if ! [[ ${{ inputs.generation }} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Generation format is invalid. Must be X.X.X.X where X is a number."
           exit 1
@@ -158,32 +199,160 @@ runs:
 
         if [[ -z "${{ inputs.installation-directory }}" ]]; then
           if [ "${{ inputs.architecture }}" == "64" ]; then
-            installation_path="C:\Program Files\CODESYS ${installation_name}"
+            installation_path="C:\\Program Files\\${installation_name}"
           else
-            installation_path="C:\Program Files (x86)\CODESYS ${installation_name}"
+            installation_path="C:\\Program Files (x86)\\${installation_name}"
           fi
         else
           installation_path="${{ inputs.installation-directory }}"
         fi
-
+        echo "Installation path set to: $installation_path"
         echo "installation-path=$installation_path" >> $GITHUB_OUTPUT
         echo "installation-name=$installation_name" >> $GITHUB_OUTPUT
+
         echo "::endgroup::"
 
     - name: Install CODESYS
       shell: pwsh
       run: |
-        echo "::group::Install CODESYS"
-        cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
-        echo "This process will take a few minutes. Please be patient."
-        .\APInstaller.CLI.exe --createInstallation `
-        --product CODESYS `
-        --generation "${{ inputs.generation }}" `
-        --bit ${{ inputs.architecture }} `
-        --patch ${{ inputs.patch }} `
-        --hotfix ${{ inputs.hotfix }} `
-        --build ${{ inputs.build }} `
-        --installationName "${{ steps.parameter_validation.outputs.installation-name }}" `
-        --destinationFolder "${{ steps.parameter_validation.outputs.installation-path }}"
-        echo ""
+        Write-Host "::group::Install CODESYS"
+        Write-Host "This process will take a few minutes. Please be patient."
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $arguments = "--createInstallation " +
+        "--product CODESYS " +
+        "--generation `"${{ inputs.generation }}`" " +
+        "--bit `"${{ inputs.architecture }}`" " +
+        "--patch `"${{ inputs.patch }}`" " +
+        "--hotfix `"${{ inputs.hotfix }}`" " +
+        "--build `"${{ inputs.build }}`" " +
+        "--installationName `"${{ steps.parameter_validation.outputs.installation-name }}`" " +
+        "--destinationFolder `"${{ steps.parameter_validation.outputs.installation-path }}`""
+
+        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "Update failed with exit code $($process.ExitCode)."
+        }
+        Write-Host "Finished installation"
+        Write-Host "::endgroup::"
+
+    - name: Decide add-ons path
+      id: add_ons_path
+      shell: bash
+      run: |
+        echo "::group::Show installation path"
+
+        base_path="${{ steps.parameter_validation.outputs.installation-path }}"
+        dir_add_ons=''
+        if [[ -d "$base_path" ]]; then
+          if [[ -d "${base_path}\CODESYS\AdditionalFolders\${{ steps.parameter_validation.outputs.installation-name }}" ]]; then
+            dir_add_ons="${base_path}\CODESYS\AdditionalFolders\${{ steps.parameter_validation.outputs.installation-name }}"
+          else
+            if [[ -d "${base_path}\CODESYS" ]]; then
+              dir_add_ons="${base_path}\CODESYS"
+            else
+              echo "Installation path does not exist"
+              exit 1
+            fi
+          fi
+        else
+          echo "Installation path does not exist"
+          exit 1
+        fi
+        
+        echo "Add-Ons directory: $dir_add_ons"
+        echo "directory=$dir_add_ons" >> $GITHUB_OUTPUT
+
         echo "::endgroup::"
+
+    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-list != '')
+      name: Install Add-ons from list
+      shell: pwsh
+      run: |
+        Write-Host "::group::Install AddOns"
+
+        $addonsToInstall = "${{ inputs.add-ons-list }}" -split "\r?\n"
+        foreach ($addon in $addonsToInstall) {
+            if (-not [string]::IsNullOrWhiteSpace($addon)) {
+                $details = $addon -split ","
+                $id = $details[0].Trim()
+                $version = $details[1].Trim()
+                echo "Installing addon with ID: $id and Version: $version"
+
+                $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+                $arguments = "--installAddOn " +
+                "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+                "--id `"${id}`" " +
+                "--version `"${version}`""
+
+                $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+                if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+                    exit 0
+                } elseif ($process.ExitCode -ne 0) {
+                    throw "AddOn installation failed with exit code $($process.ExitCode)."
+                }
+
+            }
+        }
+        Write-Host "Finished installing addons"
+
+        Write-Host "::endgroup::"
+
+    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-from-file-list != '')
+      name: Install Add-ons from list
+      shell: pwsh
+      run: |
+        echo "::group::Install AddOns"
+
+        $packagesToInstall = "${{ inputs.add-ons-from-file-list }}" -split "\r?\n"
+        foreach ($packagePath in $packagesToInstall) {
+            if (-not [string]::IsNullOrWhiteSpace($packagePath)) {
+                Write-Host "Installing package from path: $packagePath"
+
+                $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+                $arguments = " --installAddOnFromFile " +
+                "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+                "--sourcefile `"${packagePath}`""
+
+                $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+                if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+                    exit 0
+                } elseif ($process.ExitCode -ne 0) {
+                    throw "AddOn installation failed with exit code $($process.ExitCode)."
+                }
+            }
+        }
+        echo "Finished installing addons"
+
+        echo "::endgroup::"
+
+    - name: Show installation information
+      id: install_info
+      shell: pwsh
+      run: |
+        Write-Host "::group::Show installation information"
+
+        Write-Host "This process will take a few seconds. Please be patient."
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $outputFile = Join-Path -Path $PWD -ChildPath "installation-info.json"
+         
+        $arguments = "--getInstallation " +
+        "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+        "--outputfile `"${outputFile}`""
+        
+        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "Information extraction failed with exit code $($process.ExitCode)."
+        }
+
+        Write-Host "installation-info-file-path=$outputFile" >> $env:GITHUB_OUTPUT
+        Write-Host "Output file path: $outputFile"
+        Get-Content -Path "$outputFile" -Encoding UTF8
+        Write-Host "Finished installation information extraction"
+
+        Write-Host "::endgroup::"
