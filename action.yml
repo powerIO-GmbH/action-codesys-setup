@@ -8,39 +8,55 @@ branding:
 
 inputs:
   installer-version:
-    description: 'The version of the CODESYS installer to use'
+    description: 'The version of the installer to use to install the CODESYS installation.'
     required: false
     default: 2.2.2
 
   generation:
-    description: 'The generation of the CODESYS version to install'
+    description: > 
+      'This is the base generation you want to install. For example `3.5.19.0`.
+      Even if you want to install the version `3.5.19.6` you have to define the generation as `3.5.19.0`.  
+      The patch version is defined by the `patch` input.'  
     required: false
     default: 3.5.19.0
 
   architecture:
-    description: 'The architecture of the CODESYS version to install'
+    description: 'The installation architecture of CODESYS. Allowed inputs: `32` and `64`.'
     required: false
     default: 64
     
   patch:
-    description: 'The patch of the CODESYS version to install'
+    description: 'The patch of the CODESYS version to install.'
     required: false
     default: 0
 
   hotfix:
-    description: 'The hotfix of the CODESYS version to install'
+    description: 'The hotfix of the CODESYS version to install.'
     required: false
     default: 0
 
   build:
-    description: 'The build of the CODESYS version to install'
+    description: 'The build of the CODESYS version to install.'
     required: false
     default: 0
 
   installation-directory:
-    description: 'The directory to install CODESYS to'
+    description: > 
+      'This can be used to define a custom installation directory.  
+      If this input is empty, the installation path is set based on the architecture and installation version.  
+
+      For example - bit `64`, generation `3.5.19.0` and patch `6`:  
+      `C:\Program Files\CODESYS 3.5.19.6`
+
+      For example - bit `32`, generation `3.5.17.0` and patch `2`:  
+      `C:\Program Files (x86)\CODESYS 3.5.17.2`'
     required: false
     default: ''
+  
+  auto-update-installer:
+    description: 'If set to `true`, the installer will be updated before the installation.'
+    required: false
+    default: true
 
 runs:
   using: composite
@@ -49,43 +65,51 @@ runs:
       id: globals
       shell: pwsh
       run: |
+        echo "::group::Set Global variables for installation"
         echo "BASE_URL_INSTALLER=https://store-archive.codesys.com/ftp_download/3S/Installer/000127" >> $env:GITHUB_OUTPUT
         echo "INSTALLER_VERSION=${{ inputs.installer-version }}" >> $env:GITHUB_OUTPUT
         echo "INSTALLER_DIR=C:\Program Files (x86)\CODESYS\APInstaller" >> $env:GITHUB_OUTPUT
+        echo "::endgroup::"
 
     - name: Download installer
       shell: bash
       run: |
+        echo "::group::Download CODESYS installer"
         base_url=${{ steps.globals.outputs.BASE_URL_INSTALLER }}
         version=${{ steps.globals.outputs.INSTALLER_VERSION }}
         curl "${base_url}/${version}/CODESYS%20Installer%20${version}.exe" -o installer.exe
+        echo "::endgroup::"
 
     - name: Install CODESYS installer
       shell: pwsh
       run: |
+        echo "::group::Install CODESYS installer"
         Start-Process -FilePath "installer.exe" -ArgumentList "/S /v/qb" -Wait
         Remove-Item -Path "installer.exe"
+        echo "::endgroup::"
 
-    - name: Update Installer
+    - if: ${{ inputs.auto-update-installer == 'true' }}
+      name: Update Installer
       shell: pwsh
       run: |
+        echo "::group::Update CODESYS installer"
         cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
         .\APInstaller.CLI.exe --selfUpdate
         if ($LASTEXITCODE -eq 1) {
-          Write-Host "No update available. Exiting with code 0 as success."
           exit 0
         } elseif ($LASTEXITCODE -eq -1) {
-          Write-Host "Special case encountered. Exiting with code 0 as success."
           exit 0
         }
         if ($LASTEXITCODE -ne 0) {
           throw "Update failed with exit code $LASTEXITCODE."
         }
-    
-    - name: Prepare and Validate Inputs
+        echo "::endgroup::"
+
+    - name: Prepare and validate inputs
       id: parameter_validation
       shell: bash
       run: |
+        echo "::group::Validate inputs"
         if ! [[ ${{ inputs.generation }} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "Generation format is invalid. Must be X.X.X.X where X is a number."
           exit 1
@@ -123,10 +147,12 @@ runs:
 
         echo "installation-path=$installation_path" >> $GITHUB_OUTPUT
         echo "installation-name=$installation_name" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
 
     - name: Install CODESYS
       shell: pwsh
       run: |
+        echo "::group::Install CODESYS"
         cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
         .\APInstaller.CLI.exe --createInstallation `
         --product CODESYS `
@@ -137,6 +163,7 @@ runs:
         --build ${{ inputs.build }} `
         --installationName "${{ steps.parameter_validation.outputs.installation-name }}" `
         --destinationFolder "${{ steps.parameter_validation.outputs.installation-path }}"
+        echo "::endgroup::"
 
     - name: Show Installation directory
       shell: bash
