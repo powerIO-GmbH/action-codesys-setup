@@ -154,6 +154,7 @@ runs:
       run: |
         echo "::group::Install CODESYS"
         cd "${{ steps.globals.outputs.INSTALLER_DIR }}"
+        echo "This process will take a few minutes. Please be patient."
         .\APInstaller.CLI.exe --createInstallation `
         --product CODESYS `
         --generation "${{ inputs.generation }}" `
@@ -163,6 +164,7 @@ runs:
         --build ${{ inputs.build }} `
         --installationName "${{ steps.parameter_validation.outputs.installation-name }}" `
         --destinationFolder "${{ steps.parameter_validation.outputs.installation-path }}"
+        echo ""
         echo "::endgroup::"
 
     - name: Show Installation directory
