@@ -45,7 +45,6 @@ jobs:
       shell: bash
       run: |
         echo "Installer path: ${{ steps.setup_codesys.outputs.installer-path }}"
-        echo "Installer version: ${{ steps.setup_codesys.outputs.installer-version }}"
-        echo "Generation: ${{ steps.setup_codesys.outputs.generation }}"
-        echo "Architecture: ${{ steps.setup_codesys.outputs.architecture }}"
-        echo "Patch: ${{ steps.setup_codesys.outputs.patch }}"
+        echo "Installer executable: ${{ steps.setup_codesys.outputs.installer-cli-executable }}"
+        echo "CODESYS Path: ${{ steps.setup_codesys.outputs.codesys-path }}"
+        echo "CODESYS executable: ${{ steps.setup_codesys.outputs.codesys-executable }}"
