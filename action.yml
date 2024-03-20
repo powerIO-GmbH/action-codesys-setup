@@ -76,8 +76,8 @@ runs:
   using: composite
   steps:
     - name: Check runner OS
-      if: ${{ runner.os }} != 'Windows'
-      shell: bash
+      if: runner.os != 'Windows'
+      shell: pwsh
       run: |
         echo "::error::This action is only supported on Windows runners."
         exit 1
