@@ -45,7 +45,7 @@ The action supports the following inputs:
   The version of the installer to use to install the CODESYS installation.
 
   **required:** *false*  
-  **default:**: *`2.2.2`* 
+  **default:** *`2.2.2`* 
 
 - `generation`
 
@@ -54,35 +54,35 @@ The action supports the following inputs:
   The patch version is defined by the `patch` input.  
 
   **required:** *false*  
-  **default:**: *`3.5.19.0`* 
+  **default:** *`3.5.19.0`* 
 
 - `architecture`
 
   The installation architecture of CODESYS. Allowed inputs: `32` and `64`.
 
   **required:** *false*  
-  **default:**: *`64`* 
+  **default:** *`64`* 
 
 - `patch`
 
   The patch of the CODESYS version to install.
 
   **required:** *false*  
-  **default:**: *`0`* 
+  **default:** *`0`* 
 
 - `hotfix`
 
   The hotfix of the CODESYS version to install.
 
   **required:** *false*  
-  **default:**: *`0`* 
+  **default:** *`0`* 
 
 - `build`
 
   The build of the CODESYS version to install.
 
   **required:** *false*  
-  **default:**: *`0`* 
+  **default:** *`0`* 
 
 - `installation-directory`
 
@@ -96,11 +96,20 @@ The action supports the following inputs:
   `C:\Program Files (x86)\CODESYS 3.5.17.2`
 
   **required:** *false*  
-  **default:**: *`''`* 
+  **default:** *`''`* 
 
 - `auto-update-installer`
 
   If set to `true`, the installer will be updated before the installation.
 
   **required:** *false*  
-  **default:**: *`true`* 
+  **default:** *`true`* 
+
+## Outputs
+
+| Output                     | Description                                       |
+| -------------------------- | ------------------------------------------------- |
+| `codesys-path`             | The path of the installed CODESYS version.        |
+| `codesys-executable`       | The path of the CODESYS executable.               |
+| `installer-path`           | The path of the installed CODESYS installer.      |
+| `installer-cli-executable` | The path of the CODESYS installer CLI executable. |

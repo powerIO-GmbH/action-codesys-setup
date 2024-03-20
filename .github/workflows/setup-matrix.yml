@@ -33,9 +33,19 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Setup CODESYS
+      id: setup_codesys
       uses: ./
       with:
         installer-version: 2.2.2
         generation: ${{ matrix.generation }}
         architecture: ${{ matrix.architecture }}
         patch: ${{ matrix.patch }}
+    
+    - name: Test outputs
+      shell: bash
+      run: |
+        echo "Installer path: ${{ steps.setup_codesys.outputs.installer-path }}"
+        echo "Installer version: ${{ steps.setup_codesys.outputs.installer-version }}"
+        echo "Generation: ${{ steps.setup_codesys.outputs.generation }}"
+        echo "Architecture: ${{ steps.setup_codesys.outputs.architecture }}"
+        echo "Patch: ${{ steps.setup_codesys.outputs.patch }}"

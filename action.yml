@@ -58,6 +58,20 @@ inputs:
     required: false
     default: true
 
+outputs:
+  codesys-path: 
+    value: ${{ steps.parameter_validation.outputs.installation-path }}
+    description: 'The path of the installed CODESYS version.'
+  codesys-executable:
+    value: ${{ steps.parameter_validation.outputs.installation-path }}\CODESYS\Common\CODESYS.exe
+    description: 'The path of the CODESYS executable.'
+  installer-path:
+    value: ${{ steps.globals.outputs.INSTALLER_DIR }}
+    description: 'The path of the installed CODESYS installer.'
+  installer-cli-executable:
+    value: ${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe
+    description: 'The path of the CODESYS installer CLI executable.'
+
 runs:
   using: composite
   steps:
@@ -166,8 +180,3 @@ runs:
         --destinationFolder "${{ steps.parameter_validation.outputs.installation-path }}"
         echo ""
         echo "::endgroup::"
-
-    - name: Show Installation directory
-      shell: bash
-      run: |
-        ls -lah "${{ steps.parameter_validation.outputs.installation-path }}\CODESYS\Common"
