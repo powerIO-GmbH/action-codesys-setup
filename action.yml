@@ -8,37 +8,48 @@ branding:
 
 inputs:
   installer-version:
-    description: 'The version of the CODESYS installer to use'
+    description: 'The version of the installer to use to install the CODESYS installation.'
     required: false
     default: 2.2.2
 
   generation:
-    description: 'The generation of the CODESYS version to install'
+    description: > 
+      'This is the base generation you want to install. For example `3.5.19.0`.
+      Even if you want to install the version `3.5.19.6` you have to define the generation as `3.5.19.0`.  
+      The patch version is defined by the `patch` input.'  
     required: false
     default: 3.5.19.0
 
   architecture:
-    description: 'The architecture of the CODESYS version to install'
+    description: 'The installation architecture of CODESYS. Allowed inputs: `32` and `64`.'
     required: false
     default: 64
     
   patch:
-    description: 'The patch of the CODESYS version to install'
+    description: 'The patch of the CODESYS version to install.'
     required: false
     default: 0
 
   hotfix:
-    description: 'The hotfix of the CODESYS version to install'
+    description: 'The hotfix of the CODESYS version to install.'
     required: false
     default: 0
 
   build:
-    description: 'The build of the CODESYS version to install'
+    description: 'The build of the CODESYS version to install.'
     required: false
     default: 0
 
   installation-directory:
-    description: 'The directory to install CODESYS to'
+    description: > 
+      'This can be used to define a custom installation directory.  
+      If this input is empty, the installation path is set based on the architecture and installation version.  
+
+      For example - bit `64`, generation `3.5.19.0` and patch `6`:  
+      `C:\Program Files\CODESYS 3.5.19.6`
+
+      For example - bit `32`, generation `3.5.17.0` and patch `2`:  
+      `C:\Program Files (x86)\CODESYS 3.5.17.2`'
     required: false
     default: ''
 

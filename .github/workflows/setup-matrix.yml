@@ -1,9 +1,6 @@
-name: Setup CODESYS Installation
+name: Setup CODESYS Installation in matrix
 
-on:
-  push: 
-    branches: 
-      - master
+on: push
 
 jobs:
   setup-codesys:
@@ -42,6 +39,3 @@ jobs:
         generation: ${{ matrix.generation }}
         architecture: ${{ matrix.architecture }}
         patch: ${{ matrix.patch }}
-        hotfix: 0
-        build: 0
-        #installation-directory: C:\CODESYS
