@@ -16,6 +16,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
   uses: powerIO-GmbH/action-codesys-setup@v<version>
   with:
     installer-version: 2.2.2
+    auto-update-installer: false
     generation: 3.5.19.0
     architecture: 64
     patch: 6
@@ -93,3 +94,13 @@ The action supports the following inputs:
 
   For example - bit `32`, generation `3.5.17.0` and patch `2`:  
   `C:\Program Files (x86)\CODESYS 3.5.17.2`
+
+  **required:** *false*  
+  **default:**: *`''`* 
+
+- `auto-update-installer`
+
+  If set to `true`, the installer will be updated before the installation.
+
+  **required:** *false*  
+  **default:**: *`true`* 
