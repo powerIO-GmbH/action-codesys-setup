@@ -28,6 +28,7 @@ jobs:
       uses: ./
       with:
         installer-version: 2.2.2
+        auto-update-installer: false
         generation: ${{ matrix.generation }}
         architecture: ${{ matrix.architecture }}
         patch: ${{ matrix.patch }}
