@@ -16,7 +16,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 
 ```yml
   - name: Setup CODESYS
-    uses: powerIO-GmbH/action-codesys-setup@v<version>
+    uses: powerIO-GmbH/action-codesys-setup@v1
     with:
       installer-version: 2.2.2
       auto-update-installer: false
@@ -32,7 +32,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 - Install CODESYS Version `3.5.17.2`:
 ```yml
   - name: Setup CODESYS
-    uses: powerIO-GmbH/action-codesys-setup@v<version>
+    uses: powerIO-GmbH/action-codesys-setup@v1
     with:
       generation: 3.5.17.0
       architecture: 64
@@ -47,7 +47,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 ```yml
     - name: Setup CODESYS
       id: setup_codesys
-      uses: powerIO-GmbH/action-codesys-setup@v<version>
+      uses: powerIO-GmbH/action-codesys-setup@v1
       with:
         installer-version: 2.2.2
         auto-update-installer: true
