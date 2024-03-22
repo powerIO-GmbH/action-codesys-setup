@@ -1,5 +1,5 @@
 name: "Setup CODESYS Installation"
-author: powerIO GmbH (Kevin Rohn)
+author: powerIO GmbH
 description: "Setup CODESYS Installation for headless CI/CD Jobs"
 
 branding:
