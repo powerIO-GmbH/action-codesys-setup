@@ -2,10 +2,9 @@ name: Setup CODESYS Installation in matrix
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
 
 jobs:
   setup-installation:
