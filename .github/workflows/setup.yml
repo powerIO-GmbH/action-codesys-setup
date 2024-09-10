@@ -21,6 +21,10 @@ jobs:
             patch: 3
           - generation: 3.5.20.0
             patch: 0
+          - generation: 3.5.20.0
+            patch: 1
+          - generation: 3.5.20.0
+            patch: 2
 
     runs-on: windows-latest
     steps:
@@ -68,7 +72,7 @@ jobs:
         installer-version: 2.2.2
         auto-update-installer: true
         generation: 3.5.20.0
-        patch: 1
+        patch: 2
         architecture: 64
         install-add-ons: true
         add-ons-list: |
