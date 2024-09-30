@@ -72,11 +72,11 @@ jobs:
         installer-version: 2.2.2
         auto-update-installer: true
         generation: 3.5.20.0
-        patch: 2
+        patch: 3
         architecture: 64
         install-add-ons: true
         add-ons-list: |
-          dd6c2da4-2ed2-4076-9bf7-52394db68819,1.5.0.0
+          dd6c2da4-2ed2-4076-9bf7-52394db68819,1.6.0.0
           fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
           bd131967-3a89-4e22-a845-79b0be0a3ce1,4.1.0.0
         add-ons-from-file-list: |
