@@ -2,7 +2,9 @@ name: Setup CODESYS Installation in matrix
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - update-*
     paths-ignore:
       - 'README.md'
 
