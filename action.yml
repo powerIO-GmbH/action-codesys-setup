@@ -10,7 +10,7 @@ inputs:
   installer-version:
     description: "The version of the installer to use to install the CODESYS installation."
     required: false
-    default: 2.2.2
+    default: 2.3.0
 
   generation:
     description: >
@@ -18,7 +18,7 @@ inputs:
       Even if you want to install the version `3.5.19.6` you have to define the generation as `3.5.19.0`.  
       The patch version is defined by the `patch` input.'
     required: false
-    default: 3.5.19.0
+    default: 3.5.20.0
 
   architecture:
     description: "The installation architecture of CODESYS. Allowed inputs: `32` and `64`."
@@ -45,8 +45,8 @@ inputs:
       'This can be used to define a custom installation directory.  
        If this input is empty, the installation path is set based on the architecture and installation version.  
 
-        For example - bit `64`, generation `3.5.19.0` and patch `6`:  
-        `C:\Program Files\CODESYS 3.5.19.6`
+        For example - bit `64`, generation `3.5.20.0` and patch `3`:  
+        `C:\Program Files\CODESYS 3.5.20.3`
 
         For example - bit `32`, generation `3.5.17.0` and patch `2`:  
         `C:\Program Files (x86)\CODESYS 3.5.17.2`'
