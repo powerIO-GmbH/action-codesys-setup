@@ -324,7 +324,7 @@ runs:
             "--id `"${id}`" " +
             "--version `"${version}`""
 
-            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
             if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
                 exit 0
             } elseif ($process.ExitCode -ne 0) {
@@ -345,7 +345,9 @@ runs:
         $rawList = "${{ inputs.add-ons-from-file-list }}" -split "\r?\n"
         foreach ($line in $rawList) {
             if (-not [string]::IsNullOrWhiteSpace($line)) {
-                $packagesToInstall += $line.Trim()
+                # Properly handle paths with Join-Path
+                $packagePath = Join-Path $env:GITHUB_WORKSPACE $line.Trim()
+                $packagesToInstall += $packagePath
             }
         }
 
@@ -357,7 +359,7 @@ runs:
             "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
             "--sourcefile `"${packagePath}`""
 
-            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
             if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
                 exit 0
             } elseif ($process.ExitCode -ne 0) {
