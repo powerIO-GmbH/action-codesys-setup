@@ -18,7 +18,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
   - name: Setup CODESYS
     uses: powerIO-GmbH/action-codesys-setup@v1
     with:
-      installer-version: 2.2.2
+      installer-version: 2.3.0
       auto-update-installer: false
       generation: 3.5.19.0
       architecture: 64
@@ -49,7 +49,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
       id: setup_codesys
       uses: powerIO-GmbH/action-codesys-setup@v1
       with:
-        installer-version: 2.2.2
+        installer-version: 2.3.0
         auto-update-installer: true
         generation: 3.5.20.0
         architecture: 64
@@ -70,7 +70,7 @@ The action supports the following inputs:
   The version of the installer to use to install the CODESYS installation.
 
   **required:** *false*  
-  **default:** *`2.2.2`* 
+  **default:** *`2.3.0`* 
 
 - `generation`
 

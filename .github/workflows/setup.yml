@@ -26,9 +26,9 @@ jobs:
           - generation: 3.5.20.0
             patch: 1
           - generation: 3.5.20.0
-            patch: 2
-          - generation: 3.5.20.0
             patch: 3
+          - generation: 3.5.20.0
+            patch: 4
 
     runs-on: windows-latest
     steps:
