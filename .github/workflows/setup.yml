@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - update-*
+      - migrate-*
     paths-ignore:
       - 'README.md'
 
@@ -26,9 +27,9 @@ jobs:
           - generation: 3.5.20.0
             patch: 1
           - generation: 3.5.20.0
-            patch: 2
-          - generation: 3.5.20.0
             patch: 3
+          - generation: 3.5.20.0
+            patch: 4
 
     runs-on: windows-latest
     steps:
@@ -68,7 +69,9 @@ jobs:
     # 
     # Install a custom add-on package from file
     # 
-    # Path to the file: example/HVAC_Building_Process_Automation_SL_3.0.0.0.package
+    # Path to the file: 
+    # example/custom_packages/HVAC_Building_Process_Automation_SL_3.0.0.0.package
+    # example/custom_packages/HVAC_KNX_SL_1.2.2.2.package
     - name: Setup CODESYS
       id: setup_codesys
       uses: ./
@@ -84,4 +87,5 @@ jobs:
           fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
           bd131967-3a89-4e22-a845-79b0be0a3ce1,4.1.0.0
         add-ons-from-file-list: |
-          example/HVAC_Building_Process_Automation_SL_3.0.0.0.package
+          example/custom_packages/HVAC_KNX_SL_1.2.2.2.package
+          example/custom_packages/HVAC_Building_Process_Automation_SL_3.0.0.0.package

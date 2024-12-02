@@ -110,36 +110,41 @@ runs:
     - name: Check runner OS
       if: runner.os != 'Windows'
       shell: pwsh
-      run: |
-        echo "::error::This action is only supported on Windows runners."
+      run: | # powershell
+        Write-Host "::error::This action is only supported on Windows runners."
         exit 1
 
     - name: Set globals
       id: globals
       shell: pwsh
-      run: |
-        echo "::group::Set Global variables for installation"
+      run: | # powershell
+        Write-Host "::group::Set Global variables for installation"
 
-        echo "BASE_URL_INSTALLER=https://store-archive.codesys.com/ftp_download/3S/Installer/000127" >> $env:GITHUB_OUTPUT
-        echo "INSTALLER_VERSION=${{ inputs.installer-version }}" >> $env:GITHUB_OUTPUT
-        echo "INSTALLER_DIR=C:\Program Files (x86)\CODESYS\APInstaller" >> $env:GITHUB_OUTPUT
+        "BASE_URL_INSTALLER=https://store-archive.codesys.com/ftp_download/3S/Installer/000127" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        "INSTALLER_VERSION=${{ inputs.installer-version }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        "INSTALLER_DIR=C:\Program Files (x86)\CODESYS\APInstaller" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
-        echo "::endgroup::"
+        Write-Host "::endgroup::"
 
     - name: Download installer
-      shell: bash
-      run: |
-        echo "::group::Download CODESYS installer"
+      shell: pwsh
+      run: | # powershell
+        Write-Host "::group::Download CODESYS installer"
 
-        base_url=${{ steps.globals.outputs.BASE_URL_INSTALLER }}
-        version=${{ steps.globals.outputs.INSTALLER_VERSION }}
-        curl "${base_url}/${version}/CODESYS%20Installer%20${version}.exe" -o installer.exe
+        $base_url = "${{ steps.globals.outputs.BASE_URL_INSTALLER }}"
+        $version = "${{ steps.globals.outputs.INSTALLER_VERSION }}"
+        $installer_url = "$base_url/$version/CODESYS%20Installer%20$version.exe"
+        $output_file = "installer.exe"
 
-        echo "::endgroup::"
+        Write-Host "Downloading installer from $installer_url"
+
+        Invoke-WebRequest -Uri $installer_url -OutFile $output_file
+
+        Write-Host "::endgroup::"
 
     - name: Install CODESYS installer
       shell: pwsh
-      run: |
+      run: | # powershell
         Write-Host "::group::Install CODESYS installer"
 
         Write-Host "This process will take a few seconds. Please be patient."
@@ -152,7 +157,7 @@ runs:
     - if: ${{ inputs.auto-update-installer == 'true' }}
       name: Update Installer
       shell: pwsh
-      run: |
+      run: | # powershell
         Write-Host "::group::Update CODESYS installer"
 
         $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
@@ -168,132 +173,162 @@ runs:
 
     - name: Prepare and validate inputs
       id: parameter_validation
-      shell: bash
-      run: |
-        echo "::group::Validate inputs"
+      shell: pwsh
+      run: | # powershell
+        Write-Host "::group::Validate inputs"
 
-        if ! [[ ${{ inputs.generation }} =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-          echo "Generation format is invalid. Must be X.X.X.X where X is a number."
-          exit 1
-        fi
-        if [ "${{ inputs.architecture }}" != "64" ] && [ "${{ inputs.architecture }}" != "32" ]; then
-          echo "Architecture must be 64 or 32."
-          exit 1
-        fi
-        if ! [[ ${{ inputs.patch }} =~ ^[0-9]+$ ]] \
-              || ! [[ ${{ inputs.hotfix }} =~ ^[0-9]+$ ]] \
-              || ! [[ ${{ inputs.build }} =~ ^[0-9]+$ ]]; then
-          echo "Patch, Hotfix, and Build must be numeric."
-          exit 1
-        fi
+        $generation = "${{ inputs.generation }}"
+        $architecture = "${{ inputs.architecture }}"
+        $patch = "${{ inputs.patch }}"
+        $hotfix = "${{ inputs.hotfix }}"
+        $build = "${{ inputs.build }}"
+        $installationDirectory = "${{ inputs.installation-directory }}"
 
-        IFS='.' read -ra version_parts <<< "${{ inputs.generation }}"
-        length=${#version_parts[@]}
-        let "last_index=length-1"
-        version_parts[$last_index]=${{ inputs.patch }}
-        new_generation="${version_parts[0]}"
-        for (( i=1; i<${#version_parts[@]}; i++ )); do
-            new_generation="$new_generation.${version_parts[$i]}"
-        done
-        installation_name="CODESYS $(echo "${new_generation}" | sed 's/ /./g')"
+        if ($generation -notmatch '^\d+\.\d+\.\d+\.\d+$') {
+            Write-Host "Generation format is invalid. Must be X.X.X.X where X is a number."
+            exit 1
+        }
+        if ($architecture -ne "64" -and $architecture -ne "32") {
+            Write-Host "Architecture must be 64 or 32."
+            exit 1
+        }
+        if ($patch -notmatch '^\d+$' -or $hotfix -notmatch '^\d+$' -or $build -notmatch '^\d+$') {
+            Write-Host "Patch, Hotfix, and Build must be numeric."
+            exit 1
+        }
 
-        if [[ -z "${{ inputs.installation-directory }}" ]]; then
-          if [ "${{ inputs.architecture }}" == "64" ]; then
-            installation_path="C:\\Program Files\\${installation_name}"
-          else
-            installation_path="C:\\Program Files (x86)\\${installation_name}"
-          fi
-        else
-          installation_path="${{ inputs.installation-directory }}"
-        fi
-        echo "Installation path set to: $installation_path"
-        echo "installation-path=$installation_path" >> $GITHUB_OUTPUT
-        echo "installation-name=$installation_name" >> $GITHUB_OUTPUT
+        # Split the generation into parts
+        $version_parts = $generation -split '\.'
+        $length = $version_parts.Length
+        $last_index = $length - 1
+        $version_parts[$last_index] = $patch
+        $new_generation = $version_parts -join '.'
 
-        echo "::endgroup::"
+        $installation_name = "CODESYS $new_generation"
+
+        if ([string]::IsNullOrWhiteSpace($installationDirectory)) {
+            if ($architecture -eq "64") {
+                $installation_path = "C:\Program Files\$installation_name"
+            } else {
+                $installation_path = "C:\Program Files (x86)\$installation_name"
+            }
+        } else {
+            $installation_path = $installationDirectory
+        }
+        Write-Host "Installation path set to: $installation_path"
+        "installation-path=$installation_path" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        "installation-name=$installation_name" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        Write-Host "::endgroup::"
 
     - name: Install CODESYS
       shell: pwsh
-      run: |
+      run: | # powershell
         Write-Host "::group::Install CODESYS"
         Write-Host "This process will take a few minutes. Please be patient."
-
+    
         $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
         $arguments = "--createInstallation " +
-        "--product CODESYS " +
-        "--generation `"${{ inputs.generation }}`" " +
-        "--bit `"${{ inputs.architecture }}`" " +
-        "--patch `"${{ inputs.patch }}`" " +
-        "--hotfix `"${{ inputs.hotfix }}`" " +
-        "--build `"${{ inputs.build }}`" " +
-        "--installationName `"${{ steps.parameter_validation.outputs.installation-name }}`" " +
-        "--destinationFolder `"${{ steps.parameter_validation.outputs.installation-path }}`""
+            "--product CODESYS " +
+            "--generation `"${{ inputs.generation }}`" " +
+            "--bit `"${{ inputs.architecture }}`" " +
+            "--patch `"${{ inputs.patch }}`" " +
+            "--hotfix `"${{ inputs.hotfix }}`" " +
+            "--build `"${{ inputs.build }}`" " +
+            "--installationName `"${{ steps.parameter_validation.outputs.installation-name }}`" " +
+            "--destinationFolder `"${{ steps.parameter_validation.outputs.installation-path }}`""
 
-        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
-        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
-            exit 0
-        } elseif ($process.ExitCode -ne 0) {
-            throw "Update failed with exit code $($process.ExitCode)."
+        Write-Host "Executing: $exePath $arguments"
+
+        $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $startInfo.FileName = $exePath
+        $startInfo.Arguments = $arguments
+        $startInfo.UseShellExecute = $true  # Required for elevation
+        $startInfo.Verb = "runas"           # Request elevation
+
+        try {
+            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
+            $exitCode = $process.ExitCode
+            
+            Write-Host "Process completed with exit code: $exitCode"
+            
+            if ($exitCode -eq 1 -or $exitCode -eq -1) {
+                Write-Host "Installation completed with expected exit code"
+                exit 0
+            } elseif ($exitCode -ne 0) {
+                throw "Installation failed with exit code $exitCode"
+            }
         }
+        catch {
+            Write-Host "Error during installation: $_"
+            exit 1
+        }
+
         Write-Host "Finished installation"
         Write-Host "::endgroup::"
 
     - name: Decide add-ons path
       id: add_ons_path
-      shell: bash
-      run: |
-        echo "::group::Show installation path"
+      shell: pwsh
+      run: | # powershell
+        Write-Host "::group::Show installation path"
 
-        base_path="${{ steps.parameter_validation.outputs.installation-path }}"
-        dir_add_ons=''
-        if [[ -d "$base_path" ]]; then
-          if [[ -d "${base_path}\CODESYS\AdditionalFolders\${{ steps.parameter_validation.outputs.installation-name }}" ]]; then
-            dir_add_ons="${base_path}\CODESYS\AdditionalFolders\${{ steps.parameter_validation.outputs.installation-name }}"
-          else
-            if [[ -d "${base_path}\CODESYS" ]]; then
-              dir_add_ons="${base_path}\CODESYS"
-            else
-              echo "Installation path does not exist"
-              exit 1
-            fi
-          fi
-        else
-          echo "Installation path does not exist"
-          exit 1
-        fi
-        
-        echo "Add-Ons directory: $dir_add_ons"
-        echo "directory=$dir_add_ons" >> $GITHUB_OUTPUT
+        $base_path = "${{ steps.parameter_validation.outputs.installation-path }}"
+        $installation_name = "${{ steps.parameter_validation.outputs.installation-name }}"
+        $dir_add_ons = ''
 
-        echo "::endgroup::"
+        if (Test-Path $base_path) {
+            $path1 = Join-Path $base_path "CODESYS\AdditionalFolders\$installation_name"
+            $path2 = Join-Path $base_path "CODESYS"
+            if (Test-Path $path1) {
+                $dir_add_ons = $path1
+            } elseif (Test-Path $path2) {
+                $dir_add_ons = $path2
+            } else {
+                Write-Host "Installation path does not exist"
+                exit 1
+            }
+        } else {
+            Write-Host "Installation path does not exist"
+            exit 1
+        }
+
+        Write-Host "Add-Ons directory: $dir_add_ons"
+        "directory=$dir_add_ons" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+        Write-Host "::endgroup::"
 
     - if: (inputs.install-add-ons == 'true' && inputs.add-ons-list != '')
-      name: Install Add-ons from list
+      name: Install Add-ons from text entry list
       shell: pwsh
-      run: |
+      run: | # powershell
         Write-Host "::group::Install AddOns"
 
-        $addonsToInstall = "${{ inputs.add-ons-list }}" -split "\r?\n"
+        $addonsToInstall = @()
+        $rawList = "${{ inputs.add-ons-list }}" -split "\r?\n"
+        foreach ($line in $rawList) {
+            if (-not [string]::IsNullOrWhiteSpace($line)) {
+                $addonsToInstall += $line.Trim()
+            }
+        }
+
         foreach ($addon in $addonsToInstall) {
-            if (-not [string]::IsNullOrWhiteSpace($addon)) {
-                $details = $addon -split ","
-                $id = $details[0].Trim()
-                $version = $details[1].Trim()
-                echo "Installing addon with ID: $id and Version: $version"
+            $details = $addon -split ","
+            $id = $details[0].Trim()
+            $version = $details[1].Trim()
+            Write-Host "Installing addon with ID: $id and Version: $version"
 
-                $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
-                $arguments = "--installAddOn " +
-                "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
-                "--id `"${id}`" " +
-                "--version `"${version}`""
+            $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+            $arguments = "--installAddOn " +
+            "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+            "--id `"${id}`" " +
+            "--version `"${version}`""
 
-                $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
-                if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
-                    exit 0
-                } elseif ($process.ExitCode -ne 0) {
-                    throw "AddOn installation failed with exit code $($process.ExitCode)."
-                }
-
+            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
+            if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+                exit 0
+            } elseif ($process.ExitCode -ne 0) {
+                throw "AddOn installation failed with exit code $($process.ExitCode)."
             }
         }
         Write-Host "Finished installing addons"
@@ -301,37 +336,44 @@ runs:
         Write-Host "::endgroup::"
 
     - if: (inputs.install-add-ons == 'true' && inputs.add-ons-from-file-list != '')
-      name: Install Add-ons from list
+      name: Install Add-ons from file list
       shell: pwsh
-      run: |
-        echo "::group::Install AddOns"
+      run: | # powershell
+        Write-Host "::group::Install AddOns"
 
-        $packagesToInstall = "${{ inputs.add-ons-from-file-list }}" -split "\r?\n"
-        foreach ($packagePath in $packagesToInstall) {
-            if (-not [string]::IsNullOrWhiteSpace($packagePath)) {
-                Write-Host "Installing package from path: $packagePath"
-
-                $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
-                $arguments = " --installAddOnFromFile " +
-                "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
-                "--sourcefile `"${packagePath}`""
-
-                $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
-                if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
-                    exit 0
-                } elseif ($process.ExitCode -ne 0) {
-                    throw "AddOn installation failed with exit code $($process.ExitCode)."
-                }
+        $packagesToInstall = @()
+        $rawList = "${{ inputs.add-ons-from-file-list }}" -split "\r?\n"
+        foreach ($line in $rawList) {
+            if (-not [string]::IsNullOrWhiteSpace($line)) {
+                # Properly handle paths with Join-Path
+                $packagePath = Join-Path $env:GITHUB_WORKSPACE $line.Trim()
+                $packagesToInstall += $packagePath
             }
         }
-        echo "Finished installing addons"
 
-        echo "::endgroup::"
+        foreach ($packagePath in $packagesToInstall) {
+            Write-Host "Installing package from path: $packagePath"
+
+            $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+            $arguments = "--installAddOnFromFile " +
+            "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+            "--sourcefile `"${packagePath}`""
+
+            $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
+            if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+                exit 0
+            } elseif ($process.ExitCode -ne 0) {
+                throw "AddOn installation failed with exit code $($process.ExitCode)."
+            }
+        }
+        Write-Host "Finished installing addons"
+
+        Write-Host "::endgroup::"
 
     - name: Show installation information
       id: install_info
       shell: pwsh
-      run: |
+      run: | # powershell
         Write-Host "::group::Show installation information"
 
         Write-Host "This process will take a few seconds. Please be patient."
@@ -350,7 +392,7 @@ runs:
             throw "Information extraction failed with exit code $($process.ExitCode)."
         }
 
-        Write-Host "installation-info-file-path=$outputFile" >> $env:GITHUB_OUTPUT
+        "installation-info-file-path=$outputFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         Write-Host "Output file path: $outputFile"
         Get-Content -Path "$outputFile" -Encoding UTF8
         Write-Host "Finished installation information extraction"
