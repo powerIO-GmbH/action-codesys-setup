@@ -29,7 +29,7 @@ jobs:
           - generation: 3.5.20.0
             patch: 3
           - generation: 3.5.20.0
-            patch: 4
+            patch: 5
 
     runs-on: windows-latest
     steps:
@@ -40,7 +40,7 @@ jobs:
       id: setup_codesys
       uses: ./
       with:
-        installer-version: 2.3.0
+        installer-version: 2.4.0
         auto-update-installer: false
         generation: ${{ matrix.generation }}
         architecture: ${{ matrix.architecture }}
@@ -76,10 +76,10 @@ jobs:
       id: setup_codesys
       uses: ./
       with:
-        installer-version: 2.3.0
+        installer-version: 2.4.0
         auto-update-installer: true
         generation: 3.5.20.0
-        patch: 3
+        patch: 5
         architecture: 64
         install-add-ons: true
         add-ons-list: |
