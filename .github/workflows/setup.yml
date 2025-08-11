@@ -32,6 +32,8 @@ jobs:
             patch: 5
 
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -56,6 +58,8 @@ jobs:
 
   setup-installation-with-addons:
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
