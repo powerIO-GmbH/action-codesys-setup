@@ -16,6 +16,7 @@ jobs:
         generation:
           - 3.5.16.0
           - 3.5.20.0
+          - 3.5.21.0
         architecture:
           - 32
           - 64
@@ -28,10 +29,12 @@ jobs:
             patch: 1
           - generation: 3.5.20.0
             patch: 3
-          - generation: 3.5.20.0
-            patch: 5
+          - generation: 3.5.21.0
+            patch: 2
 
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -40,7 +43,7 @@ jobs:
       id: setup_codesys
       uses: ./
       with:
-        installer-version: 2.4.0
+        installer-version: 2.4.1
         auto-update-installer: false
         generation: ${{ matrix.generation }}
         architecture: ${{ matrix.architecture }}
@@ -56,6 +59,8 @@ jobs:
 
   setup-installation-with-addons:
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -76,10 +81,10 @@ jobs:
       id: setup_codesys
       uses: ./
       with:
-        installer-version: 2.4.0
+        installer-version: 2.4.1
         auto-update-installer: true
-        generation: 3.5.20.0
-        patch: 5
+        generation: 3.5.21.0
+        patch: 2
         architecture: 64
         install-add-ons: true
         add-ons-list: |
