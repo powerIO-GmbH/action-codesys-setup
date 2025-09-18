@@ -111,6 +111,9 @@ outputs:
   installation-info-file-path:
     value: ${{ steps.install_info.outputs.installation-info-file-path }}
     description: "The path of the installation information file."
+  add-ons-info-file-path:
+    value: ${{ steps.install_info.outputs.add-ons-info-file-path }}
+    description: "The path of the add-ons information file."
 
 runs:
   using: composite
@@ -430,6 +433,30 @@ runs:
         "installation-info-file-path=$outputFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         Write-Host "Output file path: $outputFile"
         Get-Content -Path "$outputFile" -Encoding UTF8
+        
         Write-Host "Finished installation information extraction"
 
         Write-Host "::endgroup::"
+
+        Write-Host "::group::Show add-ons information"
+
+        Write-Host "This process will take a few seconds. Please be patient."
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $outputFileAddOns = Join-Path -Path $PWD -ChildPath "add-ons-info.json"
+
+        $arguments = "--getAddOns " +
+        "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+        "--outputfile `"${outputFileAddOns}`""
+
+        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "Add-ons information extraction failed with exit code $($process.ExitCode)."
+        }
+        "add-ons-info-file-path=$outputFileAddOns" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Host "Output file path: $outputFileAddOns"
+        Get-Content -Path "$outputFileAddOns" -Encoding UTF8
+
+        Write-Host "Finished add-ons information extraction"

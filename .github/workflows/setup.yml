@@ -57,6 +57,15 @@ jobs:
         echo "Installer executable: ${{ steps.setup_codesys.outputs.installer-cli-executable }}"
         echo "CODESYS Path: ${{ steps.setup_codesys.outputs.codesys-path }}"
         echo "CODESYS executable: ${{ steps.setup_codesys.outputs.codesys-executable }}"
+
+    - name: Upload info files
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: warn
+        name: ${{ matrix.generation }}-${{ matrix.patch }}-${{ matrix.architecture }}-info-files
+        path: |
+          ${{ steps.setup_codesys.outputs.installation-info-file-path }}
+          ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
     
   # Example/Test 2: job to install CODESYS with add-ons from list
   setup-installation-with-addons-case01:
@@ -82,6 +91,15 @@ jobs:
           fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
           bd131967-3a89-4e22-a845-79b0be0a3ce1,4.1.0.0
 
+    - name: Upload info files
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: warn
+        name: case01-info-files
+        path: |
+          ${{ steps.setup_codesys.outputs.installation-info-file-path }}
+          ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
+
   # Example/Test 2: job to install CODESYS from add-on package file
   setup-installation-with-addons-case02:
     runs-on: windows-latest
@@ -104,6 +122,15 @@ jobs:
         add-ons-from-file-list: |
           example/custom_packages/NetBaseServices_Example_1.0.0.0.package
           example/custom_packages/Trace_Example_1.0.0.0.package
+
+    - name: Upload info files
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: warn
+        name: case02-info-files
+        path: |
+          ${{ steps.setup_codesys.outputs.installation-info-file-path }}
+          ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
 
   # Example/Test 3: job to install CODESYS with add-ons from list and package file
   setup-installation-with-addons-case03:
@@ -132,6 +159,15 @@ jobs:
           example/custom_packages/NetBaseServices_Example_1.0.0.0.package
           example/custom_packages/Trace_Example_1.0.0.0.package
 
+    - name: Upload info files
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: warn
+        name: case03-info-files
+        path: |
+          ${{ steps.setup_codesys.outputs.installation-info-file-path }}
+          ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
+
   # Example/Test 4: job to install CODESYS with custom package file only
   setup-installation-with-addons-case04:
     runs-on: windows-latest
@@ -152,3 +188,12 @@ jobs:
         architecture: 64
         install-add-ons: true
         add-ons-installer-import-file: example/custom_import_files/example_import_add-ons.installation-config
+
+    - name: Upload info files
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: warn
+        name: case04-info-files
+        path: |
+          ${{ steps.setup_codesys.outputs.installation-info-file-path }}
+          ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
