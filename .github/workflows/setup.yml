@@ -151,4 +151,4 @@ jobs:
         patch: 2
         architecture: 64
         install-add-ons: true
-        add-ons-installer-import-file: example/custom_import_files/example_import_addons.installation-config
+        add-ons-installer-import-file: example/custom_import_files/example_import_add-ons.installation-config
