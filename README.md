@@ -40,7 +40,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 - Install CODESYS Version `3.5.20.0` with following packages.
   * _CODESYS Git_ Version 1.4.0.0
   * _CODESYS Library Documentation Support_ Version 4.5.0.0
-  * Custom package file, in this case _HVAC Building & Automation_ 
+  * Custom package file, in this case _NetBaseServices Example_ 
 
 ```yml
     - name: Setup CODESYS
@@ -56,7 +56,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
           dd6c2da4-2ed2-4076-9bf7-52394db68819,1.4.0.0
           fb6f3506-d165-4e75-a1b9-98895d542cc8,4.5.0.0
         add-ons-from-file-list: |
-          example/custom_packages/HVAC_Building_Process_Automation_SL_3.0.0.0.package
+          example/custom_packages/NetBaseServices_Example_1.0.0.0.package
 ```
 
 ## Inputs
