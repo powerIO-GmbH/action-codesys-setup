@@ -5,12 +5,32 @@ on:
     branches:
       - main
       - update-*
-      - migrate-*
-      - addons-*
     paths-ignore:
       - 'README.md'
 
 jobs:
+  setup-installer-only:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup CODESYS Installer Only
+      id: setup_installer
+      uses: ./
+      with:
+        installer-only: true
+        installer-version: 2.4.1
+        auto-update-installer: true
+
+    - name: Test installer outputs
+      shell: bash
+      run: |
+        echo "Installer path: ${{ steps.setup_installer.outputs.installer-path }}"
+        echo "Installer CLI executable: ${{ steps.setup_installer.outputs.installer-cli-executable }}"
+
   setup-installation:
     strategy:
       matrix:
@@ -67,8 +87,8 @@ jobs:
           ${{ steps.setup_codesys.outputs.installation-info-file-path }}
           ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
     
-  # Example/Test 2: job to install CODESYS with add-ons from list
-  setup-installation-with-addons-case01:
+  # Test: Install with add-ons from ID list
+  addons-from-list:
     runs-on: windows-latest
     permissions:
       contents: read
@@ -95,13 +115,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: warn
-        name: case01-info-files
+        name: addons-list-info-files
         path: |
           ${{ steps.setup_codesys.outputs.installation-info-file-path }}
           ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
 
-  # Example/Test 2: job to install CODESYS from add-on package file
-  setup-installation-with-addons-case02:
+  # Test: Install with add-ons from package files
+  addons-from-packages:
     runs-on: windows-latest
     permissions:
       contents: read
@@ -127,13 +147,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: warn
-        name: case02-info-files
+        name: addons-packages-info-files
         path: |
           ${{ steps.setup_codesys.outputs.installation-info-file-path }}
           ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
 
-  # Example/Test 3: job to install CODESYS with add-ons from list and package file
-  setup-installation-with-addons-case03:
+  # Test: Install with mixed add-on sources
+  addons-mixed-sources:
     runs-on: windows-latest
     permissions:
       contents: read
@@ -163,13 +183,13 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: warn
-        name: case03-info-files
+        name: addons-mixed-info-files
         path: |
           ${{ steps.setup_codesys.outputs.installation-info-file-path }}
           ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
 
-  # Example/Test 4: job to install CODESYS with custom package file only
-  setup-installation-with-addons-case04:
+  # Test: Install with installer import config
+  addons-from-import-config:
     runs-on: windows-latest
     permissions:
       contents: read
@@ -193,7 +213,206 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         if-no-files-found: warn
-        name: case04-info-files
+        name: addons-import-info-files
         path: |
           ${{ steps.setup_codesys.outputs.installation-info-file-path }}
           ${{ steps.setup_codesys.outputs.add-ons-info-file-path }}
+
+  # Test: Multiple CODESYS versions in same job
+  multiple-installations:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install CODESYS 3.5.20.0 (64-bit)
+      id: codesys_3_5_20_0_x64
+      uses: ./
+      with:
+        installer-version: 2.4.1
+        auto-update-installer: false
+        generation: 3.5.20.0
+        architecture: 64
+        patch: 0
+
+    - name: Install CODESYS 3.5.21.2 (64-bit)
+      id: codesys_3_5_21_2_x64
+      uses: ./
+      with:
+        installer-version: 2.4.1
+        auto-update-installer: false
+        generation: 3.5.21.0
+        architecture: 64
+        patch: 2
+
+    - name: Install CODESYS 3.5.19.6 (32-bit)
+      id: codesys_3_5_19_6_x86
+      uses: ./
+      with:
+        installer-version: 2.4.1
+        auto-update-installer: false
+        generation: 3.5.19.0
+        architecture: 32
+        patch: 6
+
+    - name: Verify all installations
+      shell: pwsh
+      run: |
+        $installations = @(
+          @{ Path = "${{ steps.codesys_3_5_20_0_x64.outputs.codesys-executable }}"; Version = "3.5.20.0" },
+          @{ Path = "${{ steps.codesys_3_5_21_2_x64.outputs.codesys-executable }}"; Version = "3.5.21.2" },
+          @{ Path = "${{ steps.codesys_3_5_19_6_x86.outputs.codesys-executable }}"; Version = "3.5.19.6" }
+        )
+
+        foreach ($install in $installations) {
+          if (Test-Path $install.Path) {
+            Write-Host "CODESYS $($install.Version) found at: $($install.Path)"
+          } else {
+            Write-Host "CODESYS $($install.Version) not found at: $($install.Path)"
+            exit 1
+          }
+        }
+
+  # Test: Custom installation directory
+  custom-directory:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup CODESYS with custom directory
+      id: setup_custom
+      uses: ./
+      with:
+        installer-version: 2.4.1
+        generation: 3.5.21.0
+        patch: 0
+        architecture: 64
+        installation-directory: "C:\\Custom_Directory_CODESYS"
+
+    - name: Verify custom installation
+      shell: pwsh
+      run: |
+        $expectedPath = "C:\Custom_Directory_CODESYS"
+        $actualPath = "${{ steps.setup_custom.outputs.codesys-path }}"
+
+        if ($actualPath -eq $expectedPath) {
+          Write-Host "Installation path matches custom directory: $actualPath"
+        } else {
+          Write-Host "Expected: $expectedPath"
+          Write-Host "Actual: $actualPath"
+          exit 1
+        }
+
+        if (Test-Path "$actualPath\CODESYS\Common\CODESYS.exe") {
+          Write-Host "CODESYS executable found in custom directory"
+        } else {
+          Write-Host "CODESYS executable not found in custom directory"
+          exit 1
+        }
+
+  # Test: Installer-only followed by installation
+  installer-then-install:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: First install installer only
+      id: installer_only
+      uses: ./
+      with:
+        installer-only: true
+        installer-version: 2.4.1
+        auto-update-installer: true
+
+    - name: Verify installer is available
+      shell: pwsh
+      run: |
+        $installerCli = "${{ steps.installer_only.outputs.installer-cli-executable }}"
+        if (Test-Path $installerCli) {
+          Write-Host "Installer CLI available at: $installerCli"
+        } else {
+          Write-Host "Installer CLI not found"
+          exit 1
+        }
+
+    - name: Now install CODESYS using existing installer
+      id: install_codesys
+      uses: ./
+      with:
+        installer-version: 2.4.1
+        auto-update-installer: false
+        generation: 3.5.21.0
+        patch: 2
+        architecture: 64
+
+    - name: Verify CODESYS installation
+      shell: pwsh
+      run: |
+        $codesysExe = "${{ steps.install_codesys.outputs.codesys-executable }}"
+        if (Test-Path $codesysExe) {
+          Write-Host "CODESYS installed successfully at: $codesysExe"
+        } else {
+          Write-Host "CODESYS installation failed"
+          exit 1
+        }
+
+  # Test: Edge cases and validation
+  edge-cases:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        test:
+          - name: "minimum-patch"
+            generation: "3.5.20.0"
+            patch: "0"
+            architecture: "64"
+          - name: "32bit-with-addons"
+            generation: "3.5.21.0"
+            patch: "2"
+            architecture: "32"
+            install-addons: true
+            addon-list: "dd6c2da4-2ed2-4076-9bf7-52394db68819,1.6.0.0"
+          - name: "latest-installer"
+            generation: "3.5.21.0"
+            patch: "2"
+            architecture: "64"
+            installer-version: "2.4.1"
+            auto-update: true
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Test ${{ matrix.test.name }}
+      id: test_setup
+      uses: ./
+      with:
+        installer-version: ${{ matrix.test.installer-version || '2.4.1' }}
+        auto-update-installer: ${{ matrix.test.auto-update || 'false' }}
+        generation: ${{ matrix.test.generation }}
+        patch: ${{ matrix.test.patch }}
+        architecture: ${{ matrix.test.architecture }}
+        install-add-ons: ${{ matrix.test.install-addons || 'false' }}
+        add-ons-list: ${{ matrix.test.addon-list || '' }}
+
+    - name: Validate installation
+      shell: pwsh
+      run: |
+        Write-Host "Testing: ${{ matrix.test.name }}"
+        $codesysPath = "${{ steps.test_setup.outputs.codesys-path }}"
+        if (Test-Path "$codesysPath\CODESYS\Common\CODESYS.exe") {
+          Write-Host "Test passed: ${{ matrix.test.name }}"
+        } else {
+          Write-Host "Test failed: ${{ matrix.test.name }}"
+          exit 1
+        }

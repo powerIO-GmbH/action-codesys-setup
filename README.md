@@ -29,6 +29,16 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 
 ## Usage examples
 
+- Install the CODESYS Installer without a CODESYS installation.
+```yml
+  - name: Setup CODESYS Installer Only
+    uses: powerIO-GmbH/action-codesys-setup@v1
+    with:
+      installer-only: true
+      installer-version: 2.4.1
+      auto-update-installer: true
+```
+
 - Install CODESYS Version `3.5.20.4`:
 ```yml
   - name: Setup CODESYS
@@ -68,6 +78,7 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 
 | Input | Description | Required | Default |
 |-------|-------------|----------|----------|
+| `installer-only` | If set to `true`, only the installer will be installed without a CODESYS installation. | false | `false` |
 | `installer-version` | The version of the installer to use to install the CODESYS installation. | false | `2.4.1` |
 | `generation` | This is the base generation you want to install (e.g., `3.5.21.0`). Even if you want to install version `3.5.21.2`, you have to define the generation as `3.5.21.0`. The patch version is defined by the `patch` input. | false | `3.5.21.0` |
 | `architecture` | The installation architecture of CODESYS. Allowed inputs: `32` and `64`. | false | `64` |
@@ -85,9 +96,9 @@ It can also be used to process test cases or other CI/CD jobs in your workflow.
 
 | Output                        | Description                                       |
 | ----------------------------- | ------------------------------------------------- |
-| `codesys-path`                | The path of the installed CODESYS version.        |
-| `codesys-executable`          | The path of the CODESYS executable.               |
+| `codesys-path`                | The path of the installed CODESYS version. (Not available when `installer-only` is true) |
+| `codesys-executable`          | The path of the CODESYS executable. (Not available when `installer-only` is true) |
 | `installer-path`              | The path of the installed CODESYS installer.      |
 | `installer-cli-executable`    | The path of the CODESYS installer CLI executable. |
-| `installation-info-file-path` | The path of the installation information file.    |
-| `add-ons-info-file-path`      | The path of the add-ons information file.         |
+| `installation-info-file-path` | The path of the installation information file. (Not available when `installer-only` is true) |
+| `add-ons-info-file-path`      | The path of the add-ons information file. (Not available when `installer-only` is true) |
