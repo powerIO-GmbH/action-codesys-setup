@@ -7,6 +7,11 @@ branding:
   color: "red"
 
 inputs:
+  installer-only:
+    description: "If set to `true`, only the installer will be installed without a CODESYS installation."
+    required: false
+    default: false
+
   installer-version:
     description: "The version of the installer to use to install the CODESYS installation."
     required: false
@@ -182,7 +187,8 @@ runs:
 
         Write-Host "::endgroup::"
 
-    - name: Prepare and validate inputs
+    - if: ${{ inputs.installer-only != 'true' }}
+      name: Prepare and validate inputs
       id: parameter_validation
       shell: pwsh
       run: | # powershell
@@ -232,7 +238,8 @@ runs:
 
         Write-Host "::endgroup::"
 
-    - name: Install CODESYS
+    - if: ${{ inputs.installer-only != 'true' }}
+      name: Install CODESYS
       shell: pwsh
       run: | # powershell
         Write-Host "::group::Install CODESYS"
@@ -278,7 +285,8 @@ runs:
         Write-Host "Finished installation"
         Write-Host "::endgroup::"
 
-    - name: Decide add-ons path
+    - if: ${{ inputs.installer-only != 'true' }}
+      name: Decide add-ons path
       id: add_ons_path
       shell: pwsh
       run: | # powershell
@@ -309,7 +317,7 @@ runs:
 
         Write-Host "::endgroup::"
 
-    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-list != '')
+    - if: (inputs.installer-only != 'true' && inputs.install-add-ons == 'true' && inputs.add-ons-list != '')
       name: Install Add-ons from text entry list
       shell: pwsh
       run: | # powershell
@@ -346,7 +354,7 @@ runs:
 
         Write-Host "::endgroup::"
 
-    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-from-file-list != '')
+    - if: (inputs.installer-only != 'true' && inputs.install-add-ons == 'true' && inputs.add-ons-from-file-list != '')
       name: Install Add-ons from file list
       shell: pwsh
       run: | # powershell
@@ -381,7 +389,7 @@ runs:
 
         Write-Host "::endgroup::"
 
-    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-installer-import-file != '')
+    - if: (inputs.installer-only != 'true' && inputs.install-add-ons == 'true' && inputs.add-ons-installer-import-file != '')
       name: Install Add-ons from installer import file (.installation-config)
       shell: pwsh
       run: | # powershell
@@ -408,7 +416,8 @@ runs:
         Write-Host "Finished installing addons from import file"
         Write-Host "::endgroup::"
 
-    - name: Show installation information
+    - if: ${{ inputs.installer-only != 'true' }}
+      name: Show installation information
       id: install_info
       shell: pwsh
       run: | # powershell
