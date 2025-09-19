@@ -292,12 +292,12 @@ jobs:
         generation: 3.5.21.0
         patch: 0
         architecture: 64
-        installation-directory: "C:\\CustomCODESYS"
+        installation-directory: "C:\\Custom_Directory_CODESYS"
 
     - name: Verify custom installation
       shell: pwsh
       run: |
-        $expectedPath = "C:\CustomCODESYS"
+        $expectedPath = "C:\Custom_Directory_CODESYS"
         $actualPath = "${{ steps.setup_custom.outputs.codesys-path }}"
 
         if ($actualPath -eq $expectedPath) {
