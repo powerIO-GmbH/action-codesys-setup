@@ -83,9 +83,17 @@ inputs:
   add-ons-from-file-list:
     description: >
       'A list of addons to install.
-      Given by the path to the *.package file' 
+      Given by the path to the <name-of-package>.package file' 
     required: false
     default: '' 
+
+  add-ons-installer-import-file:
+    description: >
+      'Path to the exported installer add-ons file
+      This file can be created by exporting the installed add-ons from an existing installation.
+      The file usually has the extension `.installation-config`'
+    required: false
+    default: ''
 
 outputs:
   codesys-path:
@@ -103,6 +111,9 @@ outputs:
   installation-info-file-path:
     value: ${{ steps.install_info.outputs.installation-info-file-path }}
     description: "The path of the installation information file."
+  add-ons-info-file-path:
+    value: ${{ steps.install_info.outputs.add-ons-info-file-path }}
+    description: "The path of the add-ons information file."
 
 runs:
   using: composite
@@ -370,6 +381,33 @@ runs:
 
         Write-Host "::endgroup::"
 
+    - if: (inputs.install-add-ons == 'true' && inputs.add-ons-installer-import-file != '')
+      name: Install Add-ons from installer import file (.installation-config)
+      shell: pwsh
+      run: | # powershell
+        Write-Host "::group::Install AddOns from installer import file"
+        $importFilePath = Join-Path $env:GITHUB_WORKSPACE "${{ inputs.add-ons-installer-import-file }}"
+        if (-not (Test-Path $importFilePath)) {
+            Write-Host "Import file does not exist at path: $importFilePath"
+            exit 1
+        }
+        Write-Host "Using import file at path: $importFilePath"
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $arguments = "--installAddOns" +
+        "--location `"${{ steps.add_ons_path.outputs.directory }}`"" +
+        "--channel `"Releases`"" +
+        "--file `"${importFilePath}`""
+
+        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Verb runas -Wait -PassThru
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "AddOn installation failed with exit code $($process.ExitCode)."
+        }
+        Write-Host "Finished installing addons from import file"
+        Write-Host "::endgroup::"
+
     - name: Show installation information
       id: install_info
       shell: pwsh
@@ -395,6 +433,30 @@ runs:
         "installation-info-file-path=$outputFile" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
         Write-Host "Output file path: $outputFile"
         Get-Content -Path "$outputFile" -Encoding UTF8
+        
         Write-Host "Finished installation information extraction"
 
         Write-Host "::endgroup::"
+
+        Write-Host "::group::Show add-ons information"
+
+        Write-Host "This process will take a few seconds. Please be patient."
+
+        $exePath = "${{ steps.globals.outputs.INSTALLER_DIR }}\APInstaller.CLI.exe"
+        $outputFileAddOns = Join-Path -Path $PWD -ChildPath "add-ons-info.json"
+
+        $arguments = "--getAddOns " +
+        "--location `"${{ steps.add_ons_path.outputs.directory }}`" " +
+        "--outputfile `"${outputFileAddOns}`""
+
+        $process = Start-Process -FilePath $exePath -ArgumentList $arguments -Wait -NoNewWindow -PassThru
+        if ($process.ExitCode -eq 1 -or $process.ExitCode -eq -1) {
+            exit 0
+        } elseif ($process.ExitCode -ne 0) {
+            throw "Add-ons information extraction failed with exit code $($process.ExitCode)."
+        }
+        "add-ons-info-file-path=$outputFileAddOns" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Host "Output file path: $outputFileAddOns"
+        Get-Content -Path "$outputFileAddOns" -Encoding UTF8
+
+        Write-Host "Finished add-ons information extraction"
