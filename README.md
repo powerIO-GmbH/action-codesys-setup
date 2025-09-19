@@ -2,6 +2,8 @@
 
 > This github action is used to install CODESYS for CI/CD jobs.
 
+[![CODESYS Installation Setup](https://github.com/powerIO-GmbH/action-codesys-setup/actions/workflows/setup.yml/badge.svg?branch=main)](https://github.com/powerIO-GmbH/action-codesys-setup/actions/workflows/setup.yml)
+
 ## About
 
 This action is designed to install CODESYS for further CI/CD jobs, such as signing libraries, signing packages, etc. 

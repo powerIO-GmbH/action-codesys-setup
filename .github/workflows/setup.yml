@@ -1,4 +1,4 @@
-name: Setup CODESYS Installation in matrix
+name: CODESYS Installation Setup
 
 on:
   push:
